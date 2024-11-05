@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaposvári Útvonaltervező</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #001F3F;
+            --accent-color: #FFC107;
+            --text-light: #FFFFFF;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+            padding: 1rem;
+            box-shadow: var(--shadow);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .search-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent-color);
+            outline: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: var(--accent-color);
+            color: var(--primary-color);
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background-color: #FFD700;
+            transform: translateY(-2px);
+        }
+
+        .map-container {
+            height: 500px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .schedule-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .schedule-header {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+            padding: 15px;
+        }
+
+        #schedule {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #schedule th, #schedule td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        #schedule th {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+        }
+
+        #schedule tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .transport-type {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .transport-icon {
+            font-size: 20px;
+        }
+
+        .info-panel {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .input-wrapper {
+                width: 100%;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1><i class="fas fa-map-marked-alt"></i> Kaposvári Útvonaltervező</h1>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="search-panel">
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <input id="start" type="text" placeholder="Kezdőpont" value="Kaposvár">
+                </div>
+                <div class="input-wrapper">
+                    <input id="end" type="text" placeholder="Célpont" value="Kaposvár, Autóbusz állomás">
+                </div>
+                <div class="input-wrapper">
+                    <select id="transportType">
+                        <option value="TRANSIT">Tömegközlekedés</option>
+                        <option value="DRIVING">Autó</option>
+                        <option value="WALKING">Gyalog</option>
+                        <option value="BICYCLING">Kerékpár</option>
+                    </select>
+                </div>
+            </div>
+            <div class="button-group">
+                <button id="routeBtn">
+                    <i class="fas fa-route"></i>
+                    Útvonal keresése
+                </button>
+                <button id="localBusBtn">
+                    <i class="fas fa-bus"></i>
+                    Helyi járatok
+                </button>
+                <button id="nearestStopsBtn">
+                    <i class="fas fa-map-pin"></i>
+                    Közeli megállók
+                </button>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+
+        <div class="schedule-container">
+            <div class="schedule-header">
+                <h2><i class="fas fa-clock"></i> Menetrend</h2>
+            </div>
+            <table id="schedule">
+                <thead>
+                    <tr>
+                        <th>Járat</th>
+                        <th>Indulás</th>
+                        <th>Érkezés</th>
+                        <th>Időtartam</th>
+                        <th>Megállók</th>
+                    </tr>
+                </thead>
+                <tbody id="schedule-body"></tbody>
+            </table>
+        </div>
+
+        <div class="info-panel">
+            <h3>Népszerű úticélok Kaposváron</h3>
+            <div id="popularDestinations">
+                <!-- JavaScript tölti fel -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let map, directionsService, directionsRenderer;
+        const kaposvarBusStops = [
+            { name: "Kaposvár, Autóbusz állomás", lat: 46.3595, lng: 17.7967 },
+            { name: "Kaposvár, Városház", lat: 46.3599, lng: 17.7939 },
+            { name: "Kaposvár, Cseri út", lat: 46.3563, lng: 17.7847 },
+            // További megállók...
+        ];
+
+        const popularDestinations = [
+            { name: "Kaposvári Egyetem", lat: 46.3629, lng: 17.8015 },
+            { name: "Csiky Gergely Színház", lat: 46.3597, lng: 17.7968 },
+            { name: "Rippl-Rónai Múzeum", lat: 46.3593, lng: 17.7941 },
+            // További helyek...
+        ];
+
+        function initMap() {
+            const kaposvar = { lat: 46.359997, lng: 17.796976 };
+            
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 13,
+                center: kaposvar,
+                styles: [
+                    {
+                        featureType: "transit.station",
+                        elementType: "labels.icon",
+                        stylers: [{ visibility: "on" }]
+                    }
+                ]
+            });
+
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({
+                map: map,
+                suppressMarkers: false,
+                polylineOptions: {
+                    strokeColor: "#001F3F",
+                    strokeWeight: 5
+                }
+            });
+
+            // Népszerű helyek feltöltése
+            const destinationsDiv = document.getElementById("popularDestinations");
+            popularDestinations.forEach(dest => {
+                const button = document.createElement("button");
+                button.textContent = dest.name;
+                button.onclick = () => {
+                    document.getElementById("end").value = dest.name;
+                };
+                destinationsDiv.appendChild(button);
+            });
+        }
+
+        document.getElementById("routeBtn").onclick = function() {
+            const start = document.getElementById("start").value;
+            const end = document.getElementById("end").value;
+            const transportType = document.getElementById("transportType").value;
+
+            const request = {
+                origin: start,
+                destination: end,
+                travelMode: google.maps.TravelMode[transportType]
+            };
+
+            directionsService.route(request, function(result, status) {
+                if (status == "OK") {
+                    directionsRenderer.setDirections(result);
+                    updateSchedule(result);
+                } else {
+                    alert("Útvonal nem található: " + status);
+                }
+            });
+        };
+
+        function updateSchedule(result) {
+            const scheduleBody = document.getElementById("schedule-body");
+            scheduleBody.innerHTML = ''; // Ürítjük a meglévő menetrendet
+
+            const legs = result.routes[0].legs;
+            legs.forEach(leg => {
+                leg.steps.forEach(step => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${step.travel_mode}</td>
+                        <td>${step.departure_time ? step.departure_time.text : 'N/A'}</td>
+                        <td>${step.arrival_time ? step.arrival_time.text : 'N/A'}</td>
+                        <td>${step.duration.text}</td>
+                        <td>${step.instructions || 'N/A'}</td>
+                    `;
+                    scheduleBody.appendChild(row);
+                });
+            });
+        }
+
+        window.onload = initMap;
+    </script>
+
+        <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyArXtWdllsylygVw5t_k-22sXUJn-jMU8k&libraries=places&callback=initMap">
+    </script>
+</body>
+</html>
+
+
+
