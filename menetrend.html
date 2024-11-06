@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaposvár Helyi Járatok</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        :root {
+            --primary-color: #001F3F;
+            --accent-color: #FFC107;
+            --text-light: #FFFFFF;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+            color: #333;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(to right, var(--primary-color), #001F3F);
+            padding: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--text-light);
+            font-size: 2.5rem;
+            text-align: center;
+            animation: fadeInDown 0.5s ease-out;
+        }
+
+        .time {
+            text-align: center;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .search-container {
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        #searchBox {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: var(--shadow);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        #searchBox:focus {
+            outline: none;
+            transform: scale(1.02);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-color);
+        }
+
+        #filterButtons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .filter-button {
+            background: white;
+            border: none;
+            color: #333;
+            padding: 0.8rem 1.5rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .filter-button:hover {
+            background: var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        .filter-button.active {
+            background: var(--accent-color);
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        .route-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .route-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            transition: var(--transition);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .route-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .route-number {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .bus-icon {
+            color: var(--accent-color);
+            font-size: 1.5rem;
+            animation: bounce 2s infinite;
+        }
+
+        .route-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .next-departure, .route-frequency {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .show-stops {
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 10px;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .show-stops:hover {
+            background: rgba(0, 31, 63, 0.1);
+        }
+
+        .stops-list {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            line-height: 1.6;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #4CAF50;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .filter-button {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .route-container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            #filterButtons {
+                gap: 0.5rem;
+            }
+
+            .filter-button {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8rem;
+            }
+        }
+    
+nav {
+            float: left;
+            text-align: center;
+            vertical-align: middle;
+            position: relative;
+            background-color: var(--primary-color);
+            padding: 8px;
+            width: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            box-shadow: 0 2px 5px rgba(255, 255, 255, 0.3);
+            transition: width 0.6s linear;
+            margin-right: 10px;
+            margin-top: 30px;
+            max-height: 50px;
+        }
+
+        nav, .header-content{
+            display: flex;
+            ;
+            
+        }
+
+        nav.active {
+            width: 240px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            width: 0;
+            transition: width 0.6s linear;
+        }
+
+        nav.active ul {
+            width: 100%;
+        }
+
+        nav ul li {
+            transform: rotateY(0deg);
+            opacity: 0;
+            transition: transform 0.6s linear, opacity 0.6s linear;
+            padding: 5px;
+        }
+
+        nav.active ul li {
+            opacity: 1;
+            transform: rotateY(360deg);
+        }
+
+        nav ul a {
+            position: relative;
+            color: #000;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+
+        .icon {
+            background-color: var(--primary-color);
+            border: 0;
+            cursor: pointer;
+            padding: 0;
+            position: relative;
+            height: 30px;
+            width: 30px;
+        }
+
+        .icon:hover{
+            background-color: var(--primary-color);
+        }
+
+        .icon:focus {
+            outline: 0;
+        }
+
+        .icon .line {
+            background-color: var(--text-light);
+            height: 2px;
+            width: 20px;
+            position: absolute;
+            top: 10px;
+            left: 5px;
+            transition: transform 0.6s linear;
+        }
+
+        .icon .line2 {
+            top: auto;
+            bottom: 10px;
+        }
+
+        nav.active .icon .line1 {
+            transform: rotate(-765deg) translateY(5.5px);
+        }
+
+        nav.active .icon .line2 {
+            transform: rotate(765deg) translateY(-5.5px);
+        }
+    </style>
+</head>
+<body>
+    <header style="display:flexbox;">
+        <div class="header-content">
+            <nav class="active" id="nav">
+            <ul>
+              <li><a href="index.html"><img src="placeholder.png" style="height: 30px; width: 30px;"></a></li>
+              <li><a href="buy.html"><img src="tickets.png" style="height: 30px; width: 30px;"></a></li>
+              <li><a href="menetrend.html"><img src="calendar.png" style="height: 30px; width: 30px;"></a></li>
+              <li><a href="info.html"><img src="information-button.png" style="height: 30px; width: 30px;"></a></li>
+            </ul>
+            <button class="icon" id="toggle">
+              <div class="line line1"></div>
+              <div class="line line2"></div>
+            </button>
+          </nav>
+            <h1><i class="fas fa-bus"></i> Kaposvár Helyi Járatok</h1>
+            <div class="live-indicator">
+                <i class="fas fa-circle"></i> Élő követés
+            </div>
+            <div id="time" class="time"></div>
+            <div class="search-container">
+                <input type="text" id="searchBox" placeholder="Keress járatszám vagy útvonal alapján..." />
+                <i class="fas fa-search search-icon"></i>
+            </div>
+        </div>
+    </header>
+    
+    <div id="filterButtons">
+        <button class="filter-button active" data-filter="all">
+            <i class="fas fa-globe"></i> Összes
+        </button>
+        <button class="filter-button" data-filter="downtown">
+            <i class="fas fa-city"></i> Belváros
+        </button>
+        <button class="filter-button" data-filter="university">
+            <i class="fas fa-graduation-cap"></i> Egyetem
+        </button>
+        <button class="filter-button" data-filter="industrial">
+            <i class="fas fa-industry"></i> Ipari
+        </button>
+        <button class="filter-button" data-filter="suburban">
+            <i class="fas fa-home"></i> Külváros
+        </button>
+        <button class="filter-button" data-filter="hospital">
+            <i class="fas fa-hospital"></i> Kórház
+        </button>
+    </div>
+
+    <div id="routeContainer" class="route-container"></div>
+
+    <script>
+        const toggle = document.getElementById('toggle')
+        const nav = document.getElementById('nav')
+
+        toggle.addEventListener('click', () => nav.classList.toggle('active'))
+        const busRoutes = [
+            
+                            {
+                "number": "12",
+                "name": "Kinizsi lakótelep - Belváros",
+                "category": "residential",
+                "stops": ["Kinizsi lakótelep", "Belváros"],
+                "frequency": "15 percenként",
+                "firstBus": "05:00",
+                "lastBus": "22:30"
+            },
+            {
+                "number": "13",
+                "name": "Donner - Vasútállomás - Füredi lakótelep",
+                "category": "residential",
+                "stops": ["Donner", "Vasútállomás", "Füredi lakótelep"],
+                "frequency": "20 percenként",
+                "firstBus": "05:30",
+                "lastBus": "23:00"
+            },
+            {
+                "number": "20",
+                "name": "Kaposfüred - Belváros",
+                "category": "suburban",
+                "stops": ["Kaposfüred", "Belváros"],
+                "frequency": "30 percenként",
+                "firstBus": "05:15",
+                "lastBus": "21:45"
+            },
+            {
+                "number": "21",
+                "name": "Belváros - Füredi lakótelep",
+                "category": "residential",
+                "stops": ["Belváros", "Füredi lakótelep"],
+                "frequency": "15 percenként",
+                "firstBus": "05:10",
+                "lastBus": "22:40"
+            },
+            {
+                "number": "23",
+                "name": "Ipartelep - Belváros",
+                "category": "industrial",
+                "stops": ["Ipartelep", "Belváros"],
+                "frequency": "40 percenként",
+                "firstBus": "05:30",
+                "lastBus": "20:30"
+            },
+            {
+                "number": "26",
+                "name": "Helyi autóbusz-állomás - Kórház - Toponár",
+                "category": "hospital",
+                "stops": ["Helyi autóbusz-állomás", "Kórház", "Kisgát", "Toponár"],
+                "frequency": "30 percenként",
+                "firstBus": "05:15",
+                "lastBus": "21:45"
+            },
+            {
+                "number": "27",
+                "name": "Belváros - Zselickislak",
+                "category": "suburban",
+                "stops": ["Belváros", "Zselickislak"],
+                "frequency": "60 percenként",
+                "firstBus": "06:00",
+                "lastBus": "20:00"
+            },
+            {
+                "number": "31",
+                "name": "Helyi autóbusz-állomás - Kaposszentjakab",
+                "category": "suburban",
+                "stops": ["Helyi autóbusz-állomás", "Kaposszentjakab"],
+                "frequency": "40 percenként",
+                "firstBus": "05:20",
+                "lastBus": "22:00"
+            },
+            {
+                "number": "32",
+                "name": "Donner - Kórház - Füredi lakótelep",
+                "category": "hospital",
+                "stops": ["Donner", "Kórház", "Füredi lakótelep"],
+                "frequency": "25 percenként",
+                "firstBus": "05:10",
+                "lastBus": "22:00"
+            },
+            {
+                "number": "33",
+                "name": "Belváros - Egyetem",
+                "category": "education",
+                "stops": ["Belváros", "Egyetem"],
+                "frequency": "15 percenként",
+                "firstBus": "06:00",
+                "lastBus": "22:30"
+            },
+            {
+                "number": "40",
+                "name": "Ipari park - Vasútállomás",
+                "category": "industrial",
+                "stops": ["Ipari park", "Vasútállomás"],
+                "frequency": "45 percenként",
+                "firstBus": "05:30",
+                "lastBus": "20:30"
+            },
+            {
+                "number": "41",
+                "name": "Belváros - Toponár",
+                "category": "suburban",
+                "stops": ["Belváros", "Toponár"],
+                "frequency": "30 percenként",
+                "firstBus": "05:15",
+                "lastBus": "21:00"
+            },
+            {
+                "number": "42",
+                "name": "Kaposszentjakab - Füredi lakótelep",
+                "category": "suburban",
+                "stops": ["Kaposszentjakab", "Füredi lakótelep"],
+                "frequency": "45 percenként",
+                "firstBus": "05:30",
+                "lastBus": "22:00"
+            },
+            {
+                "number": "43",
+                "name": "Helyi autóbusz-állomás - Egyetem",
+                "category": "education",
+                "stops": ["Helyi autóbusz-állomás", "Egyetem"],
+                "frequency": "20 percenként",
+                "firstBus": "06:00",
+                "lastBus": "22:30"
+            },
+            {
+                "number": "44",
+                "name": "Donner - Ipari park",
+                "category": "industrial",
+                "stops": ["Donner", "Ipari park"],
+                "frequency": "35 percenként",
+                "firstBus": "05:20",
+                "lastBus": "21:00"
+            },
+            {
+                "number": "45",
+                "name": "Belváros - Kaposfüred",
+                "category": "suburban",
+                "stops": ["Belváros", "Kaposfüred"],
+                "frequency": "30 percenként",
+                "firstBus": "05:15",
+                "lastBus": "21:45"
+            },
+            {
+                "number": "46",
+                "name": "Füredi lakótelep - Kórház",
+                "category": "hospital",
+                "stops": ["Füredi lakótelep", "Kórház"],
+                "frequency": "25 percenként",
+                "firstBus": "05:30",
+                "lastBus": "22:15"
+            },
+            {
+                "number": "47",
+                "name": "Egyetem - Vasútállomás",
+                "category": "education",
+                "stops": ["Egyetem", "Vasútállomás"],
+                "frequency": "15 percenként",
+                "firstBus": "05:50",
+                "lastBus": "23:00"
+            },
+            {
+                "number": "61",
+                "name": "Belváros - Zselickislak",
+                "category": "suburban",
+                "stops": ["Belváros", "Zselickislak"],
+                "frequency": "60 percenként",
+                "firstBus": "06:30",
+                "lastBus": "19:30"
+            },
+            {
+                "number": "62",
+                "name": "Belváros - Ipari park",
+                "category": "industrial",
+                "stops": ["Belváros", "Ipari park"],
+                "frequency": "30 percenként",
+                "firstBus": "05:15",
+                "lastBus": "21:00"
+            },
+            {
+                "number": "70",
+                "name": "Belváros - Donner",
+                "category": "residential",
+                "stops": ["Belváros", "Donner"],
+                "frequency": "15 percenként",
+                "firstBus": "05:00",
+                "lastBus": "23:00"
+            },
+            {
+                "number": "71",
+                "name": "Kaposszentjakab - Vasútállomás",
+                "category": "suburban",
+                "stops": ["Kaposszentjakab", "Vasútállomás"],
+                "frequency": "40 percenként",
+                "firstBus": "05:10",
+                "lastBus": "21:30"
+            },
+            {
+                "number": "72",
+                "name": "Kaposfüred - Ipari park",
+                "category": "industrial",
+                "stops": ["Kaposfüred", "Ipari park"],
+                "frequency": "50 percenként",
+                "firstBus": "06:00",
+                "lastBus": "20:00"
+            },
+            {
+                "number": "73",
+                "name": "Donner - Toponár",
+                "category": "residential",
+                "stops": ["Donner", "Toponár"],
+                "frequency": "45 percenként",
+                "firstBus": "06:15",
+                "lastBus": "21:00"
+            },
+            {
+                "number": "74",
+                "name": "Vasútállomás - Egyetem",
+                "category": "education",
+                "stops": ["Vasútállomás", "Egyetem"],
+                "frequency": "20 percenként",
+                "firstBus": "05:45",
+                "lastBus": "22:45"
+            },
+            {
+                "number": "75",
+                "name": "Toponár - Zselickislak",
+                "category": "suburban",
+                "stops": ["Toponár", "Zselickislak"],
+                "frequency": "60 percenként",
+                "firstBus": "06:30",
+                "lastBus": "18:30"
+            },
+            {
+                "number": "81",
+                "name": "Belváros - Ipartelep",
+                "category": "industrial",
+                "stops": ["Belváros", "Ipartelep"],
+                "frequency": "35 percenként",
+                "firstBus": "05:45",
+                "lastBus": "21:15"
+            },
+            {
+                "number": "82",
+                "name": "Egyetem - Füredi lakótelep",
+                "category": "education",
+                "stops": ["Egyetem", "Füredi lakótelep"],
+                "frequency": "25 percenként",
+                "firstBus": "06:00",
+                "lastBus": "22:00"
+            },
+            {
+                "number": "83",
+                "name": "Ipari park - Toponár",
+                "category": "industrial",
+                "stops": ["Ipari park", "Toponár"],
+                "frequency": "50 percenként",
+                "firstBus": "06:15",
+                "lastBus": "19:30"
+            },
+            {
+                "number": "84",
+                "name": "Donner - Kaposszentjakab",
+                "category": "residential",
+                "stops": ["Donner", "Kaposszentjakab"],
+                "frequency": "30 percenként",
+                "firstBus": "05:30",
+                "lastBus": "21:00"
+            },
+            {
+                "number": "85",
+                "name": "Füredi lakótelep - Zselickislak",
+                "category": "suburban",
+                "stops": ["Füredi lakótelep", "Zselickislak"],
+                "frequency": "60 percenként",
+                "firstBus": "06:00",
+                "lastBus": "19:00"
+            },
+            {
+                "number": "86",
+                "name": "Toponár - Egyetem",
+                "category": "education",
+                "stops": ["Toponár", "Egyetem"],
+                "frequency": "30 percenként",
+                "firstBus": "05:45",
+                "lastBus": "21:45"
+            },
+            {
+                "number": "87",
+                "name": "Vasútállomás - Füredi lakótelep",
+                "category": "residential",
+                "stops": ["Vasútállomás", "Füredi lakótelep"],
+                "frequency": "20 percenként",
+                "firstBus": "05:30",
+                "lastBus": "22:30"
+            },
+            {
+                "number": "88",
+                "name": "Donner - Belváros",
+                "category": "residential",
+                "stops": ["Donner", "Belváros"],
+                "frequency": "15 percenként",
+                "firstBus": "05:00",
+                "lastBus": "23:30"
+            },
+            {
+                "number": "89",
+                "name": "Egyetem - Kórház",
+                "category": "hospital",
+                "stops": ["Egyetem", "Kórház"],
+                "frequency": "25 percenként",
+                "firstBus": "06:00",
+                "lastBus": "22:15"
+            },
+            {
+                "number": "90",
+                "name": "Kaposfüred - Zselickislak",
+                "category": "suburban",
+                "stops": ["Kaposfüred", "Zselickislak"],
+                "frequency": "70 percenként",
+                "firstBus": "06:30",
+                "lastBus": "19:00"
+            },
+            {
+                "number": "91",
+                "name": "Belváros - Füredi lakótelep - Kórház",
+                "category": "hospital",
+                "stops": ["Belváros", "Füredi lakótelep", "Kórház"],
+                "frequency": "30 percenként",
+                "firstBus": "05:10",
+                "lastBus": "22:30"
+            }
+
+        ];
+
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('hu-HU');
+            document.getElementById('time').textContent = timeString;
+        }
+
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        function displayRoutes(filter = "all") {
+            const routeContainer = document.getElementById('routeContainer');
+            routeContainer.innerHTML = "";
+            
+            const filteredRoutes = filter === "all" 
+                ? busRoutes 
+                : busRoutes.filter(route => route.category === filter);
+
+            filteredRoutes.forEach((route, index) => {
+                const routeCard = document.createElement('div');
+                routeCard.className = 'route-card';
+                routeCard.style.animationDelay = `${index * 0.1}s`;
+                
+                routeCard.innerHTML = `
+                    <div class="route-number">
+                        <i class="fas fa-bus bus-icon"></i>
+                        ${route.number} - ${route.name}
+                    </div>
+                    <div class="route-details">
+                        <div class="next-departure">
+                            <i class="far fa-clock"></i>
+                            Következő indulás: ${route.firstBus}
+                        </div>
+                        <div class="route-frequency">
+                            <i class="fas fa-sync-alt"></i>
+                            Járatsűrűség: ${route.frequency}
+                        </div>
+                        <div class="show-stops" onclick="toggleStops(this)">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Megállók megjelenítése
+                        </div>
+                        <div class="stops-list">
+                            ${route.stops.map((stop, i) => 
+                                `<div><i class="fas fa-stop"></i> ${stop}</div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                `;
+                routeContainer.appendChild(routeCard);
+            });
+        }
+
+        function toggleStops(element) {
+            const stopsList = element.nextElementSibling;
+            const isVisible = stopsList.style.display === "block";
+            
+            stopsList.style.display = isVisible ? "none" : "block";
+            element.innerHTML = isVisible
+                ? '<i class="fas fa-map-marker-alt"></i> Megállók megjelenítése'
+                : '<i class="fas fa-map-marker-alt"></i> Megállók elrejtése';
+            
+            if (!isVisible) {
+                stopsList.style.opacity = "0";
+                stopsList.style.display = "block";
+                setTimeout(() => {
+                    stopsList.style.opacity = "1";
+                }, 10);
+            }
+        }
+
+        // Keresés funkcionalitás
+        const searchBox = document.getElementById('searchBox');
+        searchBox.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const routeCards = document.querySelectorAll('.route-card');
+            
+            routeCards.forEach(card => {
+                const routeText = card.textContent.toLowerCase();
+                if (routeText.includes(searchTerm)) {
+                    card.style.display = 'block';
+                    card.style.animation = 'fadeIn 0.5s ease-out';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Szűrő gombok kezelése
+        const filterButtons = document.querySelectorAll('.filter-button');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                const filter = button.getAttribute('data-filter');
+                displayRoutes(filter);
+            });
+        });
+
+        // Valós idejű adatok szimulálása
+        function simulateRealTimeUpdates() {
+            const cards = document.querySelectorAll('.route-card');
+            cards.forEach(card => {
+                const nextDeparture = card.querySelector('.next-departure');
+                if (nextDeparture) {
+                    const now = new Date();
+                    const minutes = now.getMinutes();
+                    const nextTime = new Date(now.getTime() + Math.random() * 30 * 60000);
+                    const nextTimeString = nextTime.toLocaleTimeString('hu-HU', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    nextDeparture.innerHTML = `
+                        <i class="far fa-clock"></i>
+                        Következő indulás: ${nextTimeString}
+                        <span class="live-indicator" style="font-size: 0.8em; padding: 2px 6px;">
+                            <i class="fas fa-circle" style="font-size: 0.6em;"></i> Élő
+                        </span>
+                    `;
+                }
+            });
+        }
+
+        // Időjárás widget hozzáadása
+        function addWeatherWidget() {
+            const header = document.querySelector('.header-content');
+            const weatherWidget = document.createElement('div');
+            weatherWidget.className = 'weather-widget';
+            weatherWidget.innerHTML = `
+                <div style="
+                    background: rgba(255, 255, 255, 0.1);
+                    padding: 0.5rem 1rem;
+                    border-radius: 20px;
+                    color: white;
+                    margin-top: 1rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                ">
+                    <i class="fas fa-sun"></i>
+                    <span>Kaposvár: 22°C</span>
+                    <i class="fas fa-wind"></i>
+                    <span>Szél: 12 km/h</span>
+                </div>
+            `;
+            header.appendChild(weatherWidget);
+        }
+
+        function setupNotifications() {
+            const notificationBtn = document.createElement('button');
+            notificationBtn.className = 'filter-button';
+            notificationBtn.innerHTML = '<i class="fas fa-bell"></i> Értesítések';
+            notificationBtn.style.marginLeft = 'auto';
+            
+            notificationBtn.addEventListener('click', () => {
+                if ('Notification' in window) {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            new Notification('Kaposvár Helyi Járatok', {
+                                body: 'Az értesítések sikeresen bekapcsolva!',
+                                icon: '/bus-icon.png'
+                            });
+                        }
+                    });
+                }
+            });
+            
+            document.getElementById('filterButtons').appendChild(notificationBtn);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            displayRoutes();
+            addWeatherWidget();
+            setupNotifications();
+            setInterval(simulateRealTimeUpdates, 30000);
+        });
+
+        // Mobilbarát menü
+        function setupMobileMenu() {
+            const header = document.querySelector('header');
+            const filterButtons = document.getElementById('filterButtons');
+            
+            let lastScroll = 0;
+            window.addEventListener('scroll', () => {
+                const currentScroll = window.pageYOffset;
+                
+                if (currentScroll > lastScroll && currentScroll > 100) {
+                    header.style.transform = 'translateY(-100%)';
+                } else {
+                    header.style.transform = 'translateY(0)';
+                }
+                lastScroll = currentScroll;
+            });
+        }
+
+        setupMobileMenu();
+
+        
+        function addThemeToggle() {
+            const themeBtn = document.createElement('button');
+            themeBtn.className = 'filter-button';
+            themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
+            themeBtn.style.position = 'fixed';
+            themeBtn.style.bottom = '20px';
+            themeBtn.style.right = '20px';
+            themeBtn.style.zIndex = '1000';
+            
+            let isDark = false;
+            themeBtn.addEventListener('click', () => {
+                isDark = !isDark;
+                document.body.style.background = isDark ? '#1a1a1a' : 'linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%)';
+                document.body.style.color = isDark ? '#fff' : '#333';
+                themeBtn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+                
+                const cards = document.querySelectorAll('.route-card');
+                cards.forEach(card => {
+                    card.style.background = isDark ? '#2d2d2d' : 'white';
+                    card.style.color = isDark ? '#fff' : '#333';
+                });
+            });
+            
+            document.body.appendChild(themeBtn);
+        }
+
+        addThemeToggle();
+    </script>
+</body>
+</html>
