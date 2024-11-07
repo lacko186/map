@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaposvári Volán Fizetés</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --dark-blue: #1e3f66; /* Sötétkék */
+            --bright-yellow: #ffcc00; /* Élénk sárga */
+            --light-gray: #f0f0f0; /* Világosszürke */
+            --dark-gray: #2c3e50; /* Sötétszürke */
+            --white: #ffffff; /* Fehér */
+            --error-color: #ff4757; /* Hiba szín */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--dark-blue);
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            color: var(--white);
+            transition: background 0.3s ease;
+        }
+
+        h2 {
+            margin-bottom: 30px;
+            color: var(--bright-yellow);
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--bright-yellow);
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 15px;
+            color: var(--bright-yellow);
+            font-size: 18px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--bright-yellow);
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: var(--bright-yellow);
+            border: none;
+            border-radius: 10px;
+            color: var(--dark-blue);
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top:  20px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 204, 0, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .form-control {
+                font-size: 14px;
+            }
+
+            .submit-btn {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h2 {
+                font-size: 1.2rem;
+            }
+
+            .form-control {
+                font-size: 12px;
+            }
+
+            .submit-btn {
+                font-size: 14px;
+            }
+        }
+
+        /* Animációk */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .slide-up {
+            animation: slideUp 0.5s ease-in-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* További stílusok */
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .success-message {
+            color: var(--bright-yellow);
+            font-size: 1rem;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        /* További mezők a fizetési űrlaphoz */
+        .form-group.additional {
+            margin-bottom: 25px;
+        }
+
+        .form-group.additional label {
+            color: var(--bright-yellow);
+        }
+
+        .form-control.additional {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container fade-in">
+        <h2>Fizetési Adatok Megadása</h2>
+        <form id="payment-form">
+            <div class="form-group slide-up">
+                <label for="cardholder-name">Kártyabirtokos Neve</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="cardholder-name" class="form-control" placeholder="Írja be a nevét" required>
+                </div>
+                <div class="error-message" id="name-error"></div>
+            </div>
+            <div class="form-group slide-up">
+                <label for="card-number">Kártyaszám</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-credit-card"></i>
+                    <input type="text" id="card-number" class="form-control" placeholder="XXXX-XXXX-XXXX-XXXX" required>
+                </div>
+                <div class="error-message" id="card-error"></div>
+            </div>
+            <div class="form-group slide-up">
+                <label for="expiry-date">Lejárati Dátum</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-calendar-alt"></i>
+                    <input type="text" id="expiry-date" class="form-control" placeholder="MM/YY" required>
+                </div>
+                <div class="error-message" id="expiry-error"></div>
+            </div>
+            <div class="form-group slide-up">
+                <label for="cvv">CVV</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="text" id="cvv" class="form-control" placeholder="XXX" required>
+                </div>
+                <div class="error-message" id="cvv-error"></div>
+            </div>
+            <div class="form-group additional slide-up">
+                <label for="billing-address">Számlázási Cím</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <input type="text" id="billing-address" class="form-control additional" placeholder="Írja be a címet" required>
+                </div>
+                <div class="error-message" id="address-error"></div>
+            </div>
+            <div class="form-group additional slide-up">
+                <label for="email">E-mail Cím</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="email" class="form-control additional" placeholder="Írja be az e-mail címét" required>
+                </div>
+                <div class="error-message" id="email-error"></div>
+            </div>
+            <div class="form-group additional slide-up">
+                <label for="phone">Telefonszám</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-phone"></i>
+                    <input type="tel" id="phone" class="form-control additional" placeholder="Írja be a telefonszámát" required>
+                </div>
+                <div class="error-message" id="phone-error"></div>
+            </div>
+            <button type="submit" class="submit-btn">Fizetés <i class="fas fa-paper-plane"></i></button>
+            <div class="success-message" id="success-message"></div>
+        </form>
+    </div>
+    <script>
+        document.getElementById('payment-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            let isValid = true;
+
+            // Hibaüzenetek törlése
+            document.getElementById('name-error').textContent = '';
+            document.getElementById('card-error').textContent = '';
+            document.getElementById('expiry-error').textContent = '';
+            document.getElementById('cvv-error').textContent = '';
+            document.getElementById('address-error').textContent = '';
+            document.getElementById('email-error').textContent = '';
+            document.getElementById('phone-error').textContent = '';
+            document.getElementById('success-message').textContent = '';
+
+            // Kártyabirtokos neve ellenőrzése
+            const cardholderName = document.getElementById('cardholder-name').value.trim();
+            if (cardholderName === '') {
+                document.getElementById('name-error').textContent = 'A kártyabirtokos neve megadása kötelező.';
+                isValid = false;
+            }
+
+            // Kártyaszám ellenőrzése
+            const cardNumber = document.getElementById('card-number').value.trim();
+            const cardNumberPattern = /^\d{4}-\d{4}-\d{4}-\d{4}$/;
+            if (!cardNumberPattern.test(cardNumber)) {
+                document.getElementById('card-error').textContent = 'Kérjük, adjon meg egy érvényes kártyaszámot (XXXX-XXXX-XXXX-XXXX).';
+                isValid = false;
+            }
+
+            // Lejárati dátum ellenőrzése
+            const expiryDate = document.getElementById('expiry-date').value.trim();
+            const expiryDatePattern = /^(0[1-9]|1[0-2])\/\d{2}$/;
+            if (!expiryDatePattern.test(expiryDate)) {
+                document.getElementById('expiry-error').textContent = 'Kérjük, adjon meg egy érvényes lejárati dátumot (MM/YY).';
+                isValid = false;
+            }
+
+            // CVV ellenőrzése
+            const cvv = document.getElementById('cvv').value.trim();
+            if (cvv.length !== 3) {
+                document.getElementById('cvv-error').textContent = 'A CVV kódnak 3 számjegyből kell állnia.';
+                isValid = false;
+            }
+
+            // Számlázási cím ellenőrzése
+            const billingAddress = document.getElementById('billing-address').value.trim();
+            if (billingAddress === '') {
+                document.getElementById('address-error').textContent = 'A számlázási cím megadása kötelező.';
+                isValid = false;
+            }
+
+            // E-mail cím ellenőrzése
+            const email = document.getElementById('email').value.trim();
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(email)) {
+                document.getElementById('email-error').textContent = 'Kérjük, adjon meg egy érvényes e-mail címet.';
+                isValid = false;
+            }
+
+            // Telefonszám ellenőrzése
+            const phone = document.getElementById('phone').value.trim();
+            if (phone === '') {
+                document.getElement ById('phone-error').textContent = 'A telefonszám megadása kötelező.';
+                isValid = false;
+            }
+
+            // Ha minden rendben van, üzenet küldése
+            if (isValid) {
+                document.getElementById('success-message').textContent = 'Fizetés sikeres!';
+                // Konfetti animáció
+                confetti();
+                // Űrlap törlése
+                document.getElementById('payment-form').reset();
+            }
+        });
+    </script>
+</body>
+</html>
