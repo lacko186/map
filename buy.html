@@ -377,24 +377,6 @@
             }
         }
 
-        nav {
-            float: left;
-            text-align: center;
-            vertical-align: middle;
-            position: relative;
-            background-color: var(--primary-color);
-            padding: 8px;
-            width: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 3px;
-            box-shadow: 0 2px 5px rgba(255, 255, 255, 0.3);
-            transition: width 0.6s linear;
-            margin-right: 10px;
-            margin-top: 30px;
-            max-height: 50px;
-        }
 
         nav, .header{
             display: flex;
@@ -578,6 +560,7 @@
                     <input type="date" id="validUntil" readonly>
                 </div>
             </div>
+           
 
             <div style="font-weight: bold;" class="section-title">Fizetési információk</div>
             <div class="input-group">
@@ -591,6 +574,11 @@
                     </select>
                     <div class="error-message">Kérjük, válasszon fizetési módot</div>
                 </div>
+            </div>
+
+            <div class="input-wrapper">
+                <label class="input-label">Számlaszám*</label>
+                <input type="text" id="szamlaszam" placeholder="#### #### #### ####">
             </div>
 
             <div class="price-display">
@@ -656,7 +644,6 @@
         }
 
         function generateInvoice() {
-            // Collect all form data
             const formData = {
                 name: document.getElementById('name').value,
                 email: document.getElementById('email').value,
@@ -669,13 +656,14 @@
                 validUntil: document.getElementById('validUntil').value,
                 paymentMethod: document.getElementById('paymentMethod').value,
                 totalPrice: document.getElementById('totalPrice').textContent,
+                szamlaszam: document.getElementById('szamlaszam').value,
                 invoiceId: generateRandomId(),
                 invoiceDate: new Date().toLocaleDateString('hu-HU')
             };
 
-            // Validate form
+            
             if (!formData.name || !formData.email || !formData.phone || !formData.address || 
-                !formData.ticketType || !formData.paymentMethod) {
+                !formData.ticketType || !formData.paymentMethod || !formData.szamlaszam) {
                 alert("Kérjük, töltse ki az összes kötelező mezőt!");
                 return;
             }
@@ -684,7 +672,7 @@
             const invoiceDetails = `Számla
             
 ----------------------------------------------------------------------------------------            
-Számlaszám: ${formData.invoiceId}
+Számlaszám: ${formData.szamlaszam}
 Kiállítás dátuma: ${formData.invoiceDate}
 
 
@@ -728,7 +716,7 @@ Egyedi azonosító: ${formData.invoiceId}
             // Add company logo/header
             pdf.setFontSize(20);
             pdf.setTextColor(0, 31, 63); // Primary color
-            pdf.text("Közlekedési Vállalat", 105, 20, { align: "center" });
+            pdf.text("Volán Számla", 105, 20, { align: "center" });
             
             // Add invoice details
             pdf.setFontSize(12);
