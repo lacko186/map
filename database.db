@@ -1,0 +1,152 @@
+-- Felhasználók tábla létrehozása
+CREATE TABLE users (
+    user_id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    phone_number VARCHAR(20),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_login DATETIME,
+    is_active TINYINT(1) DEFAULT 1,
+    user_role VARCHAR(20) DEFAULT 'user'
+);
+
+-- Jelszó visszaállítási tokenek tárolása
+CREATE TABLE password_reset_tokens (
+    token_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    token VARCHAR(255) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
+    is_used TINYINT(1) DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Buszmegállók tábla
+CREATE TABLE bus_stops (
+    stop_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    latitude DECIMAL(18,15) NOT NULL,
+    longitude DECIMAL(18,15) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_active TINYINT(1) DEFAULT 1
+);
+
+-- Busz útvonalak tábla
+CREATE TABLE routes (
+    route_id INT PRIMARY KEY AUTO_INCREMENT,
+    route_number VARCHAR(10) NOT NULL,
+    route_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_active TINYINT(1) DEFAULT 1
+);
+
+-- Útvonal-megálló kapcsolótábla
+CREATE TABLE route_stops (
+    route_id INT,
+    stop_id INT,
+    stop_order INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (route_id, stop_id),
+    FOREIGN KEY (route_id) REFERENCES routes(route_id),
+    FOREIGN KEY (stop_id) REFERENCES bus_stops(stop_id)
+);
+
+-- Menetrend tábla
+CREATE TABLE schedules (
+    schedule_id INT PRIMARY KEY AUTO_INCREMENT,
+    route_id INT,
+    departure_time TIME NOT NULL,
+    day_type VARCHAR(20),
+    is_active TINYINT(1) DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (route_id) REFERENCES routes(route_id)
+);
+
+-- Felhasználói kedvencek tábla
+CREATE TABLE user_favorites (
+    user_id INT,
+    stop_id INT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, stop_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (stop_id) REFERENCES bus_stops(stop_id)
+);
+
+-- Felhasználói munkamenetek tábla
+CREATE TABLE user_sessions (
+    session_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    token VARCHAR(255) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Felhasználói tevékenységek naplója
+CREATE TABLE user_activity_logs (
+    log_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    activity_type VARCHAR(50) NOT NULL,
+    description TEXT,
+    ip_address VARCHAR(45),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Indexek létrehozása a gyorsabb kereséshez
+CREATE INDEX idx_bus_stops_location ON bus_stops(latitude, longitude);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_route_stops_route ON route_stops(route_id);
+CREATE INDEX idx_route_stops_stop ON route_stops(stop_id);
+CREATE INDEX idx_schedules_route ON schedules(route_id);
+CREATE INDEX idx_user_favorites_user ON user_favorites(user_id);
+
+-- Buszmegállók adatainak beszúrása
+INSERT INTO bus_stops (name, latitude, longitude) VALUES 
+('helyi autóbusz állomás', 46.353712944816756, 17.790623009204865),
+('Berzsenyi u. felűljáró', 46.356517550424560, 17.785293459892273),
+('Berzsenyi u. 30.', 46.360245694362280, 17.783764600753784),
+('Ballakúti u.', 46.341454000000000, 17.800144000000000);
+-- További megállók beszúrása...
+
+-- Felhasználó regisztrációs stored procedure
+DELIMITER //
+CREATE PROCEDURE register_user(
+    IN p_username VARCHAR(50),
+    IN p_email VARCHAR(100),
+    IN p_password_hash VARCHAR(255),
+    IN p_first_name VARCHAR(50),
+    IN p_last_name VARCHAR(50)
+)
+BEGIN
+    INSERT INTO users (username, email, password_hash, first_name, last_name)
+    VALUES (p_username, p_email, p_password_hash, p_first_name, p_last_name);
+    
+    INSERT INTO user_activity_logs (user_id, activity_type, description)
+    VALUES (LAST_INSERT_ID(), 'REGISTRATION', 'New user registration');
+END //
+
+-- Bejelentkezés ellenőrzése stored procedure
+CREATE PROCEDURE check_login(
+    IN p_username VARCHAR(50),
+    IN p_password_hash VARCHAR(255)
+)
+BEGIN
+    SELECT user_id, username, user_role
+    FROM users
+    WHERE username = p_username 
+    AND password_hash = p_password_hash
+    AND is_active = 1;
+    
+    UPDATE users
+    SET last_login = CURRENT_TIMESTAMP
+    WHERE username = p_username;
+END //
+DELIMITER ;
