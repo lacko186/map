@@ -125,7 +125,7 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
 ?>
 
 <!DOCTYPE html>
-<html lang="hu">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -413,7 +413,6 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
             <h1 id="formTitle">Bejelentkezés</h1>
         </div>
 
-        <!-- Közösségi média bejelentkezés -->
         <div class="social-login">
             <button class="social-btn google-btn">
                 <i class="fab fa-google"></i>
@@ -429,20 +428,22 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
             <span>vagy</span>
         </div>
         
-        <form id="loginForm">
+        <!-- Módosított login form -->
+        <form id="loginForm" action="index.php" method="POST">
+            <input type="hidden" name="login" value="1">
             <div class="form-group">
                 <label for="loginEmail">Email cím vagy felhasználónév</label>
-                <input type="text" id="loginEmail" placeholder="pelda@email.com" required>
+                <input type="text" id="loginEmail" name="loginEmail" placeholder="pelda@email.com" required>
             </div>
             
             <div class="form-group">
                 <label for="loginPassword">Jelszó</label>
-                <input type="password" id="loginPassword" placeholder="••••••••" required>
+                <input type="password" id="loginPassword" name="loginPassword" placeholder="••••••••" required>
             </div>
 
             <div class="remember-forgot">
                 <label class="remember-me">
-                    <input type="checkbox" checked>
+                    <input type="checkbox" name="remember" checked>
                     <span>Emlékezz rám</span>
                 </label>
                 <a href="#" class="forgot-password">Elfelejtett jelszó?</a>
@@ -451,25 +452,27 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
             <button type="submit" class="submit-btn">Bejelentkezés</button>
         </form>
 
-        <form id="registerForm" class="hidden">
+        <!-- Módosított register form -->
+        <form id="registerForm" action="index.php" method="POST" class="hidden">
+            <input type="hidden" name="register" value="1">
             <div class="form-group">
                 <label for="registerUsername">Felhasználónév</label>
-                <input type="text" id="registerUsername" placeholder="Felhasználónév" required>
+                <input type="text" id="registerUsername" name="registerUsername" placeholder="Felhasználónév" required>
             </div>
 
             <div class="form-group">
                 <label for="registerEmail">Email cím</label>
-                <input type="email" id="registerEmail" placeholder="pelda@email.com" required>
+                <input type="email" id="registerEmail" name="registerEmail" placeholder="pelda@email.com" required>
             </div>
             
             <div class="form-group">
                 <label for="registerPassword">Jelszó</label>
-                <input type="password" id="registerPassword" placeholder="••••••••" required>
+                <input type="password" id="registerPassword" name="registerPassword" placeholder="••••••••" required>
             </div>
 
             <div class="form-group">
                 <label for="registerPasswordConfirm">Jelszó megerősítése</label>
-                <input type="password" id="registerPasswordConfirm" placeholder="••••••••" required>
+                <input type="password" id="registerPasswordConfirm" name="registerPasswordConfirm" placeholder="••••••••" required>
             </div>
             
             <button type="submit" class="submit-btn">Regisztráció</button>
@@ -482,7 +485,7 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
         </div>
     </div>
 
-        <script>
+    <script>
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
         const toggleBtn = document.getElementById('toggleForm');
@@ -513,33 +516,6 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
             document.querySelector('.container').offsetHeight;
             document.querySelector('.container').style.animation = '';
         });
-
-        // Form submission handlers
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            console.log('Bejelentkezés:', {
-                email: document.getElementById('loginEmail').value,
-                password: document.getElementById('loginPassword').value
-            });
-        });
-
-        registerForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const password = document.getElementById('registerPassword').value;
-            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
-            
-            if (password !== passwordConfirm) {
-                alert('A jelszavak nem egyeznek!');
-                return;
-            }
-
-            console.log('Regisztráció:', {
-                username: document.getElementById('registerUsername').value,
-                email: document.getElementById('registerEmail').value,
-                password: password
-            });
-        });
     </script>
-    </div>
 </body>
 </html>
